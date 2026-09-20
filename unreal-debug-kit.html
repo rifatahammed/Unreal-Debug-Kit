@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unreal Debug Kit — console commands, profiling and debugging for UE5</title>
+<meta name="description" content="A searchable reference of Unreal Engine 5 console commands, profiling workflows, debugging tools and fixes, organised by editor, rendering, Blueprint, C++, gameplay, UI, animation, physics, networking, AI and audio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F6; --panel:#FFFFFF; --panel-2:#EBEFF2; --line:#DCE2E7; --line-2:#C7CFD6;
+  --text:#1B2126; --muted:#556170; --faint:#8592A0;
+  --accent:#C97A0A; --accent-ink:#FFFFFF; --mark:rgba(242,169,59,.35);
+  --cmd:#1E8A47; --tip:#9A6B00; --howto:#1F6FCC; --code:#0F8A80; --key:#6B45D6; --arg:#C2367C; --err:#CC3B3B;
+  --sans:"Bricolage Grotesque","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+  --radius:6px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1D2125; --panel:#24292E; --panel-2:#2D3339; --line:#343B42; --line-2:#444C55;
+    --text:#E9EDF0; --muted:#9AA5B0; --faint:#6F7A86;
+    --accent:#F2A93B; --accent-ink:#1D2125; --mark:rgba(242,169,59,.22);
+    --cmd:#7ED99A; --tip:#F2C94C; --howto:#78BBFF; --code:#5CD3C6; --key:#B79CFF; --arg:#F495B8; --err:#FF7B7B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1D2125; --panel:#24292E; --panel-2:#2D3339; --line:#343B42; --line-2:#444C55;
+  --text:#E9EDF0; --muted:#9AA5B0; --faint:#6F7A86;
+  --accent:#F2A93B; --accent-ink:#1D2125; --mark:rgba(242,169,59,.22);
+  --cmd:#7ED99A; --tip:#F2C94C; --howto:#78BBFF; --code:#5CD3C6; --key:#B79CFF; --arg:#F495B8; --err:#FF7B7B;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1240px;margin:0 auto;padding:12px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap;background:none;border:0;color:var(--text);padding:0;cursor:pointer}
+.brand .mark{width:28px;height:28px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:600 13px var(--mono)}
+.search{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line-2);border-radius:var(--radius);height:44px;min-width:0}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--mark)}
+.search .prompt{padding:0 4px 0 13px;color:var(--accent);font:600 15px var(--mono)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:500 14px var(--mono);height:100%;padding:0 8px}
+.search input::placeholder{color:var(--faint)}
+.search .clear{display:none;border:0;background:none;color:var(--muted);font:500 12px var(--mono);padding:4px 8px;cursor:pointer;border-radius:4px}
+.search .clear:hover{color:var(--text);background:var(--panel-2)}
+.search.has .clear{display:inline-block}
+.kbd{font:500 11px var(--mono);color:var(--muted);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:var(--panel-2);margin-right:10px}
+.theme{border:1px solid var(--line-2);background:var(--panel);color:var(--muted);border-radius:var(--radius);height:36px;padding:0 10px;cursor:pointer;font:500 12px var(--mono);white-space:nowrap}
+.theme:hover{color:var(--text);border-color:var(--accent)}
+
+/* layout */
+.wrap{max-width:1240px;margin:0 auto;padding:22px 20px 60px;display:grid;grid-template-columns:224px minmax(0,1fr);gap:32px}
+.side{position:sticky;top:74px;align-self:start;max-height:calc(100vh - 90px);overflow:auto;padding-right:6px}
+.cat{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-left:2px solid transparent;color:var(--muted);font-size:14px;padding:7px 10px;border-radius:0 var(--radius) var(--radius) 0;cursor:pointer}
+.cat:hover{color:var(--text);background:var(--panel)}
+.cat.on{color:var(--text);border-left-color:var(--accent);background:var(--panel);font-weight:600}
+.cat .n{font:500 11px var(--mono);color:var(--faint)}
+.cat.zero{opacity:.45}
+
+/* hero */
+.hero h1{font-size:36px;font-weight:700;letter-spacing:-.025em;line-height:1.05;margin:6px 0 8px;font-variation-settings:"opsz" 96}
+.hero p{color:var(--muted);margin:0;max-width:64ch}
+.primer{margin:18px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.primer p{color:var(--muted);margin:0 0 8px;max-width:70ch}
+.primer p:last-child{margin-bottom:0}
+.overlay{font:500 13px/1.7 var(--mono);white-space:pre;overflow-x:auto;color:var(--text);background:var(--bg);border-radius:4px;padding:10px 12px;margin:10px 0 4px}
+.overlay .g{color:var(--cmd)} .overlay .r{color:var(--err)} .overlay .y{color:var(--tip)} .overlay .m{color:var(--faint)}
+
+/* filters */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 8px}
+.chip{border:1px solid var(--line-2);background:var(--panel);color:var(--muted);font-size:12.5px;font-weight:500;padding:4px 10px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip:hover{color:var(--text)}
+.chip.on{border-color:var(--accent);color:var(--text);background:var(--mark)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--c,var(--muted))}
+.meta{font:500 12px var(--mono);color:var(--faint);margin:6px 0 4px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* items */
+.list{list-style:none;margin:0;padding:0}
+.item{position:relative;padding:16px 0 16px 16px;border-top:1px solid var(--line)}
+.item::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;border-radius:2px;background:var(--tc)}
+.item-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.type{font:600 11px var(--mono);color:var(--tc);letter-spacing:.02em;white-space:nowrap}
+.item h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.catlink{margin-left:auto;font-size:12px;color:var(--faint);background:none;border:0;cursor:pointer;padding:0}
+.catlink:hover{color:var(--accent)}
+.cmd{position:relative;margin:10px 0 6px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:10px 60px 10px 12px;font:500 13px/1.6 var(--mono);white-space:pre-wrap;word-break:break-word;color:var(--text);tab-size:4}
+.copy{position:absolute;top:6px;right:6px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--muted);font:500 11px var(--mono);padding:3px 8px;border-radius:4px;cursor:pointer}
+.copy:hover{color:var(--text);border-color:var(--accent)}
+.copy.ok{color:var(--cmd);border-color:var(--cmd)}
+.item p{margin:6px 0 0;color:var(--muted);max-width:78ch}
+.item p code,.primer code{font:500 12.5px var(--mono);color:var(--text);background:var(--panel-2);padding:1px 5px;border-radius:4px}
+.tags{margin-top:8px;display:flex;gap:4px 10px;flex-wrap:wrap}
+.tag{font:500 11.5px var(--mono);color:var(--faint);background:none;border:0;padding:0;cursor:pointer}
+.tag:hover{color:var(--accent)}
+mark{background:var(--mark);color:inherit;border-radius:2px;padding:0 1px}
+.empty{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);max-width:60ch}
+.empty strong{color:var(--text)}
+.empty button{margin-top:12px;border:1px solid var(--line-2);background:var(--panel);color:var(--text);border-radius:var(--radius);padding:8px 14px;cursor:pointer;font-size:14px}
+.empty button:hover{border-color:var(--accent)}
+.foot{border-top:1px solid var(--line);margin-top:30px;padding-top:14px;font-size:12.5px;color:var(--faint);max-width:70ch}
+.foot a{color:var(--muted)}
+
+@media (max-width:880px){
+  .top-inner{grid-template-columns:1fr auto;grid-template-areas:"brand theme" "search search";gap:10px 12px;padding:10px 14px}
+  .brand{grid-area:brand} .theme{grid-area:theme} .search{grid-area:search;height:42px}
+  .kbd{display:none}
+  .wrap{grid-template-columns:1fr;gap:14px;padding:16px 14px 50px}
+  .side{position:static;max-height:none;display:flex;gap:4px;overflow-x:auto;padding:0 0 6px;margin:0 -14px;padding-left:14px;padding-right:14px;scrollbar-width:thin}
+  .cat{width:auto;white-space:nowrap;border-left:0;border-bottom:2px solid transparent;border-radius:var(--radius) var(--radius) 0 0;padding:6px 10px}
+  .cat.on{border-bottom-color:var(--accent)}
+  .hero h1{font-size:30px}
+  .item{padding-left:14px}
+  .item p{max-width:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .copy,.chip,.cat,.theme{transition:color .12s,border-color .12s,background-color .12s}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <button class="brand" id="home" aria-label="Unreal Debug Kit home"><span class="mark">~</span><span>Unreal Debug Kit</span></button>
+    <div class="search" id="searchbox">
+      <span class="prompt" aria-hidden="true">&gt;</span>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search commands, tips and errors — try: stat unit, replication, navmesh, accessed none" aria-label="Search the debug kit">
+      <button class="clear" id="clear" type="button">clear</button>
+      <span class="kbd" aria-hidden="true">/</span>
+    </div>
+    <button class="theme" id="theme" type="button" aria-label="Switch color theme">auto</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="side" id="cats" aria-label="Categories"></nav>
+  <main>
+    <section class="hero" id="hero"></section>
+    <div class="chips" id="types" role="group" aria-label="Filter by entry type"></div>
+    <div class="meta" id="meta"></div>
+    <ul class="list" id="list"></ul>
+    <p class="foot">Written against Unreal Engine 5.x. Console variable names occasionally shift between releases: if one is not recognised, type its prefix (for example <code>p.Vehicle.</code>) and press Tab to list what your build has. Official reference: <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine" target="_blank" rel="noopener">Unreal Engine documentation</a>.</p>
+  </main>
+</div>
+
+<script>
+const DATA=[
+// ───────── EDITOR & CONSOLE ─────────
+{c:"general",t:"key",n:"Open the console",k:"`",d:"Press ` (the key left of 1; ~ on many layouts) to open the one-line console. Press it twice for the full log drawer. Tab autocompletes; type a prefix such as `r.Nanite.` and press Tab to list everything under it. Rebind under Project Settings > Input > Console Keys.",g:["tilde","console","log","autocomplete"]},
+{c:"general",t:"cmd",n:"Show FPS and frame time",k:"stat fps",d:"Frames per second and milliseconds per frame in the top-right corner. The first thing to turn on.",g:["framerate","ms"]},
+{c:"general",t:"cmd",n:"Clear every stat overlay",k:"stat none",d:"Turns off all `stat` displays at once.",g:["reset","clear"]},
+{c:"general",t:"cmd",n:"Cap or uncap the frame rate",k:"t.MaxFPS 0",d:"0 removes the cap. Set 30 or 60 to feel how the game behaves on a slower target, and to make frame-rate-dependent bugs show up.",g:["framerate","limit","vsync"]},
+{c:"general",t:"cmd",n:"Slow down time",k:"slomo 0.25",d:"Global time dilation; 1 is normal speed. Great for watching a collision, a blend, or a particle burst frame by frame. Pair with `pause`.",g:["time dilation","slow motion","pause"]},
+{c:"general",t:"cmd",n:"Pause the game",k:"pause",d:"Toggles game pause from the console. Physics, animation, and Blueprint ticks stop; the console and debug camera still work.",g:["freeze"]},
+{c:"general",t:"cmd",n:"Free-fly debug camera",k:"ToggleDebugCamera",d:"Detaches a spectator camera and prints the actor, component, and material under the crosshair, with distance. Run it again to return. `F8` in PIE does the simpler eject.",g:["spectator","inspect","fly","eject"]},
+{c:"general",t:"key",n:"Eject from the pawn in PIE",k:"F8",d:"Leaves the possessed pawn and gives you a free editor camera while the game keeps running. Press F8 again to possess. `Shift+F1` releases the mouse to the editor.",g:["possess","spectate","mouse"]},
+{c:"general",t:"cmd",n:"High-resolution screenshot",k:"HighResShot 2",d:"Renders a screenshot at 2× the viewport size into Saved/Screenshots. You can pass an explicit size: `HighResShot 3840x2160`.",g:["screenshot","capture","image"]},
+{c:"general",t:"cmd",n:"Load a level by name",k:"open MapName",d:"Loads a map. Add `?listen` to host it as a listen server, or `open 127.0.0.1` to join a server by address.",g:["map","level","travel","load"]},
+{c:"general",t:"cmd",n:"Restart the current level",k:"RestartLevel",d:"Reloads the map you are in. Handy after `slomo` or `god` experiments.",g:["reload","reset"]},
+{c:"general",t:"cmd",n:"Change a log category's verbosity at runtime",k:"Log LogNet VeryVerbose",d:"Levels: Fatal, Error, Warning, Display, Log, Verbose, VeryVerbose. `Log LogTemp Off` silences a noisy category. Useful with `LogNet`, `LogStreaming`, `LogGarbage`, `LogAbilitySystem`.",g:["verbosity","output log","category"]},
+{c:"general",t:"cmd",n:"Show a property on screen for every instance",k:"DisplayAll BP_Enemy_C Health",d:"Draws the current value of a property for all objects of that class, every frame. Blueprint class names end in `_C`. Stop with `DisplayClear`. `GetAll BP_Enemy_C Health` prints once to the log instead.",g:["displayall","getall","watch","variable","inspect"]},
+{c:"general",t:"cmd",n:"List live objects of a class",k:"obj list class=StaticMeshComponent",d:"Prints every live instance with counts and memory. Compare before and after a level unload to spot leaks. `obj list` with no filter lists everything (slow).",g:["memory","leak","count","objects"]},
+{c:"general",t:"cmd",n:"Find what keeps an object alive",k:"obj refs name=BP_Door_C_1",d:"Prints the reference chain from a root to the object. This is how you find why an actor or asset never gets garbage collected. Get the exact name from `obj list`.",g:["garbage","leak","reference","gc"]},
+{c:"general",t:"cmd",n:"Force garbage collection",k:"obj gc",d:"Runs a full GC pass now. Use it to check whether an object really gets freed, or to reproduce a GC hitch on demand.",g:["garbage collection","memory"]},
+{c:"general",t:"cmd",n:"Call a Level Blueprint custom event",k:"ce MyEventName",d:"Fires a custom event on the current Level Blueprint by name, with no input binding required. `ke * MyEventName` is the older equivalent.",g:["kismet","event","trigger","level blueprint"]},
+{c:"general",t:"cmd",n:"Dump every console command and variable",k:"DumpConsoleCommands",d:"Writes the full list with help text to the Output Log. `Help` builds an HTML page of the same under Saved and opens it in a browser.",g:["help","list","cvar","reference"]},
+{c:"general",t:"cmd",n:"Toggle a show flag",k:"show collision",d:"Also `show bounds`, `show navigation`, `show volumes`, `show particles`, `show fog`, `show staticmeshes`, `show skeletalmeshes`, `show landscape`, `show decals`, `show postprocessing`. `ShowFlag.Collision 1` sets instead of toggling.",g:["showflag","visibility","hide"]},
+{c:"general",t:"key",n:"Viewport view modes",k:"Alt+2 … Alt+8",d:"Alt+2 wireframe, Alt+3 unlit, Alt+4 lit, Alt+5 detail lighting, Alt+6 lighting only, Alt+7 light complexity, Alt+8 shader complexity. `Alt+C` toggles collision, `G` toggles game view (hides editor-only icons).",g:["wireframe","unlit","shader complexity","hotkey"]},
+{c:"general",t:"key",n:"Play and stop PIE",k:"Alt+P / Esc",d:"Alt+P plays in the editor, Esc stops. Set the Play dropdown to New Editor Window or Standalone Game to test outside the level viewport.",g:["play in editor","hotkey"]},
+{c:"general",t:"key",n:"Find things fast",k:"Ctrl+B / Ctrl+P / Ctrl+Space",d:"Ctrl+B locates the selected actor's asset in the Content Browser, Ctrl+P opens the asset search popup, Ctrl+Space opens the content drawer. `Alt+Shift+R` opens the Reference Viewer for the selected asset.",g:["content browser","asset","search","hotkey"]},
+{c:"general",t:"tip",n:"Where the logs and reports live",d:"`Saved/Logs/ProjectName.log` is the full session log. Crashes go to `Saved/Crashes`, profiling captures to `Saved/Profiling`, screenshots to `Saved/Screenshots`, GPU dumps to `Saved/GPUDumps`. Deleting `Saved` and `Intermediate` is safe and fixes many odd editor states.",g:["log file","crash","folder","saved"]},
+{c:"general",t:"tip",n:"Output Log and Message Log",d:"Window > Output Log shows everything with filters by verbosity and category. Window > Message Log collects Blueprint runtime errors, load errors, and packaging problems as clickable entries that jump to the offending node or asset.",g:["errors","runtime error","window"]},
+{c:"general",t:"arg",n:"Run a packaged game with a log window",k:"MyGame.exe -log",d:"Opens a separate console window that streams the log. Add `-windowed -ResX=1280 -ResY=720` for a small window.",g:["command line","packaged","console window"]},
+{c:"general",t:"arg",n:"Run console commands at startup",k:"-ExecCmds=\"stat unit,r.SetRes 1280x720w\"",d:"Comma-separated commands executed once the engine is up. Works for the editor executable and packaged builds.",g:["command line","startup","exec"]},
+{c:"general",t:"arg",n:"Useful launch arguments",k:"-game  -server  -nullrhi  -NoSound  -unattended  -nosplash  -d3d12  -vulkan  -WaitForDebugger",d:"`-game` runs the editor exe as a game, `-server` as a dedicated server, `-nullrhi` skips rendering (CI, automation), `-d3d11`/`-d3d12`/`-vulkan` pick the RHI, `-WaitForDebugger` pauses at startup until you attach.",g:["command line","rhi","dedicated server","headless"]},
+{c:"general",t:"tip",n:"Set console variables permanently",k:"[ConsoleVariables]\nr.Shadow.Virtual.Enable=1\nt.MaxFPS=120",d:"Put a `[ConsoleVariables]` section in `Config/DefaultEngine.ini` for project-wide defaults. `Engine/Config/ConsoleVariables.ini` is for your machine only and is the usual place for `r.ShaderDevelopmentMode=1`.",g:["ini","config","cvar","defaultengine"]},
+{c:"general",t:"tip",n:"Console Variables Editor plugin",d:"Edit > Plugins > Console Variables Editor. Build named collections of cvars, flip them on and off together, and save presets. Much nicer than retyping twelve `r.` commands per test.",g:["plugin","cvar","preset"]},
+{c:"general",t:"tip",n:"Statistics, Size Map, Reference Viewer",d:"Tools > Audit > Statistics lists primitives, texture memory, and lighting data per level. Right-click an asset > Size Map shows everything it drags into memory. Reference Viewer (Alt+Shift+R) shows who depends on what — the tool for 'why is this loading?'.",g:["audit","memory","dependencies","asset"]},
+{c:"general",t:"tip",n:"Session Frontend",d:"Tools > Session Frontend: manage devices, send console commands to a running build, and open `.uestats` captures from `stat startfile` in the legacy Profiler tab.",g:["device","remote","profiler"]},
+
+// ───────── PROFILING ─────────
+{c:"profiling",t:"cmd",n:"Find the bottleneck thread",k:"stat unit",d:"Frame, Game, Draw, GPU, and RHIT times in ms. Frame is roughly the largest of the others, and that one is your bottleneck: Game = gameplay CPU (ticks, Blueprint, physics, animation), Draw = render thread (culling, draw-call setup), GPU = shading and resolution, RHIT = the RHI thread submitting commands.",g:["bottleneck","game thread","render thread","gpu","frame time"]},
+{c:"profiling",t:"cmd",n:"Frame time history graph",k:"stat unitgraph",d:"Same numbers as `stat unit`, plotted over time. Spikes are hitches; a saw-tooth usually means GC or streaming.",g:["graph","hitch","spike"]},
+{c:"profiling",t:"howto",n:"Decide what to fix first",d:"Read `stat unit`. GPU highest? Run `r.ScreenPercentage 50` — if the frame rate jumps you are pixel-bound (shaders, post, resolution), otherwise geometry-bound (Nanite, vertex count, shadows). Game highest? Trace the game thread in Unreal Insights and run `DumpTicks`. Draw highest? `stat scenerendering` — too many draw calls or primitives: instance, merge, HLOD, cull distances. RHIT highest? Also draw calls, plus DX12 barrier cost.",g:["bottleneck","workflow","gpu bound","cpu bound"]},
+{c:"profiling",t:"cmd",n:"Game thread breakdown",k:"stat game",d:"Where game-thread time goes: world tick, Blueprint time, physics, navigation, timers, and so on.",g:["cpu","tick","game thread"]},
+{c:"profiling",t:"cmd",n:"Render thread and draw calls",k:"stat scenerendering",d:"Mesh draw calls, visible primitives, lights, and the cost of each render-thread stage. The first stop when Draw is your bottleneck.",g:["draw calls","primitives","render thread"]},
+{c:"profiling",t:"cmd",n:"RHI counters",k:"stat rhi",d:"Triangles drawn, draw primitive calls, render target and texture memory as seen by the RHI.",g:["triangles","vram","memory"]},
+{c:"profiling",t:"cmd",n:"GPU time per pass",k:"stat gpu",d:"Live GPU time for base pass, shadows, Lumen, Nanite, translucency, and post-processing. For a detailed one-frame tree use `ProfileGPU`.",g:["gpu","pass","shadow","lumen"]},
+{c:"profiling",t:"cmd",n:"Single-frame GPU profile",k:"ProfileGPU",d:"Captures one frame and opens a hierarchical GPU timing window in the editor (`Ctrl+Shift+,`). In a packaged build the tree goes to the log.",g:["gpu","frame","hierarchy"]},
+{c:"profiling",t:"cmd",n:"Dump every GPU pass and resource",k:"DumpGPU",d:"Writes all render passes, their parameters, and intermediate textures to Saved/GPUDumps and opens a browser-based viewer. The tool for 'why does this pass look wrong?'.",g:["gpu","rdg","render graph","dump"]},
+{c:"profiling",t:"cmd",n:"Visibility and culling cost",k:"stat initviews",d:"Frustum and occlusion culling times, plus how many primitives were culled or occluded. High values mean too many objects to consider — use cull distance volumes and HLOD.",g:["culling","occlusion","frustum"]},
+{c:"profiling",t:"cmd",n:"Memory by category",k:"stat memory",d:"Memory split by system: textures, meshes, physics, audio, UObjects. `stat memoryplatform` adds OS-level totals.",g:["ram","memory"]},
+{c:"profiling",t:"cmd",n:"Full memory report to disk",k:"memreport -full",d:"Writes objects, textures, RHI resources, and LLM tags to Saved/Profiling/MemReports. Take one before and one after a suspected leak and diff them.",g:["memory","leak","report"]},
+{c:"profiling",t:"cmd",n:"Low-level memory tracker",k:"stat llm",d:"Requires launching with `-llm` (add `-llmcsv` to also write CSVs). Shows memory by engine tag: Meshes, Textures, Audio, UObject, Physics, RHI. `stat llmfull` and `stat llmplatform` give more detail.",g:["memory","llm","tag"]},
+{c:"profiling",t:"cmd",n:"Texture streaming budget",k:"stat streaming",d:"Pool size, how much is in use, and whether you are over budget. Raise `r.Streaming.PoolSize` (MB) if textures stay blurry, or lower texture sizes.",g:["textures","pool","blurry","mips"]},
+{c:"profiling",t:"cmd",n:"Other stat groups",k:"stat anim / physics / particles / niagara / slate / net / levels / engine / sounds / lumen / nanite / shadowrendering",d:"Each `stat` group covers one system. `stat levels` also shows streaming state per level with load times. Type `stat ` and press Tab to browse the full list.",g:["stat","groups","list"]},
+{c:"profiling",t:"cmd",n:"Log hitches with their stats",k:"stat dumphitches",d:"Whenever a frame exceeds the hitch threshold, dumps the stats of that frame to the log. `stat hitches` shows them on screen. `t.HitchFrameTimeThreshold` sets the threshold in ms.",g:["hitch","stutter","spike","log"]},
+{c:"profiling",t:"cmd",n:"Dump one frame or an average",k:"stat dumpframe -ms=0.5",d:"Writes every stat scope above the threshold for the current frame to the log. `stat dumpave -ms=0.1 -num=120` averages over 120 frames instead.",g:["dump","frame","log"]},
+{c:"profiling",t:"cmd",n:"Record a stats file",k:"stat startfile",d:"Starts writing a `.uestats` capture to Saved/Profiling/UnrealStats. `stat stopfile` ends it. Open the file in Tools > Session Frontend > Profiler. Unreal Insights is the modern replacement.",g:["capture","uestats","session frontend"]},
+{c:"profiling",t:"howto",n:"Unreal Insights",k:"-trace=cpu,gpu,frame,log,bookmark -tracehost=127.0.0.1",d:"Tools > Run Unreal Insights, then start a trace from the Trace button in the editor status bar, from `Trace.Start`, or by launching with the argument above (or `-tracefile=path`). Timing Insights shows every scope on every thread; click a long bar on the game thread to see what it was. Add your own scopes with `TRACE_CPUPROFILER_EVENT_SCOPE`.",g:["insights","trace","timing","cpu","profiler"]},
+{c:"profiling",t:"cmd",n:"Trace controls",k:"Trace.Start default\nTrace.Bookmark LapStart\nTrace.Stop",d:"Start and stop tracing from the console, and drop named bookmarks so you can find moments in the Insights timeline. `Trace.Start cpu,gpu,memory` picks channels explicitly.",g:["insights","bookmark","trace"]},
+{c:"profiling",t:"cmd",n:"Named events for external profilers",k:"stat namedevents",d:"Emits scope names as named events so PIX, RenderDoc, and platform profilers show readable markers instead of raw addresses.",g:["pix","renderdoc","markers"]},
+{c:"profiling",t:"arg",n:"Memory Insights",k:"-trace=memory",d:"Launch with a memory trace channel, then open the session in Unreal Insights to see every allocation over time, by callstack and LLM tag. Heavier than a CPU trace; keep sessions short.",g:["memory","insights","allocations","leak"]},
+{c:"profiling",t:"cmd",n:"CSV profiler",k:"csv.StartCapture\ncsv.EndCapture",d:"Writes per-frame stats to a CSV in Saved/Profiling/CSV. Cheap enough to run for whole play sessions on devices. Open in a spreadsheet or with the CsvTools (PerfReportTool, CSVToSVG) under Engine/Binaries/DotNET.",g:["csv","capture","device","long session"]},
+{c:"profiling",t:"cmd",n:"List everything that ticks",k:"DumpTicks",d:"Prints every ticking actor and component with its tick group and interval. Anything in the list that does not need per-frame updates is free performance: disable tick, use a tick interval, or switch to timers and events.",g:["tick","actors","components","cpu"]},
+{c:"profiling",t:"tip",n:"Profile in the right build",d:"The editor adds a lot of overhead and its numbers lie. Profile in Standalone or, better, a packaged Development build. The Test configuration has Shipping-level performance but keeps the console and `stat` commands.",g:["standalone","test build","shipping","packaged"]},
+{c:"profiling",t:"tip",n:"Hitch checklist",d:"Sudden stalls are rarely 'slow code'. Check in order: level and asset loads (`stat levels`, `Log LogStreaming Verbose`); shader or PSO compiles; garbage collection (`Log LogGarbage Log`, then `obj list` for object counts); spawning many actors in one frame; synchronous asset loads caused by hard references in Blueprint.",g:["hitch","stutter","loading","gc","pso"]},
+{c:"profiling",t:"cmd",n:"Quick GPU-bound test",k:"r.ScreenPercentage 50",d:"Renders at half resolution. If the frame rate rises a lot you are pixel-bound: post-process, materials, overdraw, Lumen or VSM resolution. If nothing changes the GPU is busy with geometry, or you are not GPU-bound at all. Reset with `r.ScreenPercentage 100`.",g:["gpu bound","resolution","test"]},
+{c:"profiling",t:"cmd",n:"Disable VSync while measuring",k:"r.VSync 0",d:"VSync locks the frame rate to the display and hides real frame times. Turn it off before reading any numbers.",g:["vsync","framerate"]},
+
+// ───────── RENDERING & MATERIALS ─────────
+{c:"rendering",t:"cmd",n:"Switch view mode from the console",k:"viewmode shadercomplexity",d:"Options: `wireframe`, `unlit`, `lit`, `detaillighting`, `lightingonly`, `lightcomplexity`, `shadercomplexity`, `quadoverdraw`, `lightmapdensity`, `stationarylightoverlap`, `lodcoloration`, `collisionpawn`, `collisionvis`.",g:["viewmode","wireframe","overdraw","complexity"]},
+{c:"rendering",t:"howto",n:"Read Shader Complexity",d:"Green is cheap, red is expensive, white is extremely expensive. Translucency and layered materials go red quickly. Use the Quad Overdraw view for the other half of the story: tiny triangles and dense foliage waste GPU even with cheap shaders.",g:["shader complexity","overdraw","material cost"]},
+{c:"rendering",t:"howto",n:"Nanite visualization",k:"r.Nanite.Visualize Overdraw",d:"In the viewport: Show > Nanite Visualization > Overview, Triangles, Clusters, Overdraw, Primitives. Overdraw and cluster views show where Nanite is working hardest; a mesh that never shows up here is not Nanite-enabled.",g:["nanite","triangles","clusters","overdraw"]},
+{c:"rendering",t:"howto",n:"Lumen visualization",d:"Show > Lumen > Overview, Lumen Scene, Reflection View, Surface Cache. Pink in the Surface Cache view means the mesh has no cards and will not bounce light: check the mesh's Lumen card settings or raise Max Lumen Mesh Cards.",g:["lumen","gi","surface cache","reflections"]},
+{c:"rendering",t:"howto",n:"Virtual Shadow Map visualization",d:"Show > Visualize > Virtual Shadow Map, then pick Cached Pages, Page Age, or Mip. Lots of uncached pages every frame means something is invalidating shadows: moving lights, world position offset on large meshes, or foliage animation.",g:["vsm","shadows","cached pages"]},
+{c:"rendering",t:"cmd",n:"Isolate the cost of a feature",k:"r.Nanite 0\nr.DynamicGlobalIlluminationMethod 0\nr.ReflectionMethod 0\nr.Shadow.Virtual.Enable 0",d:"Toggle big systems one at a time while watching `stat gpu`. GI method: 0 none, 1 Lumen, 2 SSGI. Reflection method: 0 none, 1 Lumen, 2 SSR. Restore with 1 / 1 / 1 / 1.",g:["nanite","lumen","vsm","cost","disable"]},
+{c:"rendering",t:"cmd",n:"Set the anti-aliasing method",k:"r.AntiAliasingMethod 4",d:"0 none, 1 FXAA, 2 TAA, 3 MSAA (forward renderer only), 4 TSR. Switching to 0 is the quickest way to check whether ghosting or smearing comes from temporal AA.",g:["taa","tsr","fxaa","ghosting"]},
+{c:"rendering",t:"cmd",n:"Force a LOD level",k:"r.ForceLOD 2",d:"Forces every static mesh to that LOD index; `r.ForceLOD -1` resets. `r.SkeletalMeshLODBias 1` shifts skeletal LODs, `r.StaticMeshLODDistanceScale 0.5` makes LODs switch closer.",g:["lod","level of detail","distance"]},
+{c:"rendering",t:"cmd",n:"See what occlusion culling removed",k:"r.VisualizeOccludedPrimitives 1",d:"Draws a box for every primitive the occlusion system culled this frame. If occluded objects still cost you, they are probably too big or use unbounded world position offset.",g:["occlusion","culling","hzb"]},
+{c:"rendering",t:"cmd",n:"Freeze culling and look around",k:"FreezeRendering",d:"Locks visibility as it was at this moment. Fly the camera elsewhere and you will see exactly what was culled and what was still drawn. Run again to unfreeze.",g:["culling","freeze","visibility"]},
+{c:"rendering",t:"cmd",n:"Resolution and window mode",k:"r.SetRes 1920x1080w",d:"Suffix `w` windowed, `f` fullscreen, `wf` windowed fullscreen. `r.ScreenPercentage 75` changes internal render resolution without touching the window.",g:["resolution","fullscreen","windowed"]},
+{c:"rendering",t:"cmd",n:"Scalability groups",k:"sg.ShadowQuality 0",d:"Groups: `sg.ViewDistanceQuality`, `sg.AntiAliasingQuality`, `sg.ShadowQuality`, `sg.GlobalIlluminationQuality`, `sg.ReflectionQuality`, `sg.PostProcessQuality`, `sg.TextureQuality`, `sg.EffectsQuality`, `sg.FoliageQuality`, `sg.ShadingQuality`. Levels 0 low to 3 epic (4 cinematic). `r.MaterialQualityLevel` (0 low, 1 high, 2 medium, 3 epic) tests material quality switches.",g:["scalability","quality","settings","low end"]},
+{c:"rendering",t:"cmd",n:"Turn post effects off one by one",k:"r.MotionBlur.Amount 0\nr.DepthOfFieldQuality 0\nr.BloomQuality 0\nr.SSR.Quality 0\nr.VolumetricFog 0",d:"Each removes one effect for a clean A/B. `show postprocessing` removes all of them at once.",g:["post process","motion blur","dof","bloom","ssr","fog"]},
+{c:"rendering",t:"cmd",n:"Recompile shaders without restarting",k:"RecompileShaders changed",d:"Rebuilds shaders whose source changed on disk (editing .usf and .ush files). Also `RecompileShaders all`, `RecompileShaders global`, and `RecompileShaders material MyMaterial`.",g:["shader","usf","hlsl","recompile"]},
+{c:"rendering",t:"tip",n:"Shader development mode",k:"r.ShaderDevelopmentMode=1\nr.DumpShaderDebugInfo=1",d:"Put both in Engine/Config/ConsoleVariables.ini. Shader compile errors then pop up in a dialog with a Retry button instead of killing the editor, and the generated HLSL is written to Saved/ShaderDebugInfo so you can read exactly what a material compiled to.",g:["shader","hlsl","compile error","debug info"]},
+{c:"rendering",t:"howto",n:"Capture a frame in RenderDoc",k:"renderdoc.CaptureFrame",d:"Enable the RenderDoc plugin (Edit > Plugins), restart, then use the capture button in the viewport toolbar or the console command. RenderDoc opens with every draw call, its inputs, and the shader — the tool for 'why is this pixel that color?'.",g:["renderdoc","frame capture","draw call","pixel"]},
+{c:"rendering",t:"tip",n:"Material Stats panel",d:"In the Material editor open Window > Stats (and Platform Stats). It shows instruction counts per shader stage, texture samplers used (16 max per material unless samplers are set to Shared), and compile errors with the offending node. Watch the instruction count grow as you add nodes.",g:["material","instructions","samplers","stats"]},
+{c:"rendering",t:"tip",n:"Stationary light overlap",d:"Only four stationary lights can overlap; the fifth falls back to fully dynamic (expensive) and shows red in the Stationary Light Overlap view mode. Move lights, reduce their radius, or make one Movable.",g:["lights","stationary","overlap","baked"]},
+{c:"rendering",t:"tip",n:"'Lighting needs to be rebuilt'",d:"The banner means baked lightmaps are stale. Build > Build Lighting Only, or if the project uses Lumen with Movable lights, set the lights to Movable so nothing is baked. The Lightmap Density view mode shows which meshes have lightmaps at all.",g:["lightmass","baked","lightmap","banner"]},
+{c:"rendering",t:"cmd",n:"Texture streaming pool",k:"r.Streaming.PoolSize 3000",d:"Size in MB of the texture streaming pool. Blurry textures that never sharpen usually mean the pool is over budget: check `stat streaming` first, then raise the pool or shrink textures.",g:["textures","blurry","pool","streaming"]},
+{c:"rendering",t:"tip",n:"Shader compilation hitches",d:"In the editor, 'Compiling shaders (N)' means shaders are still being built; wait, and keep the DDC on a fast drive. In packaged builds, hitches the first time something appears are PSO compiles: enable PSO precaching under Project Settings > Rendering and ship a shader pipeline cache.",g:["pso","shader","hitch","ddc","packaged"]},
+
+// ───────── BLUEPRINT ─────────
+{c:"blueprint",t:"tip",n:"Print String without the spam",d:"Set a Key on the Print String node and each call overwrites the previous message instead of stacking a wall of text. Set Duration to 0 for a one-frame value you can watch live. Every Print String also goes to the log under `LogBlueprintUserMessages`.",g:["print","log","debug text","key"]},
+{c:"blueprint",t:"key",n:"Breakpoints and stepping",k:"F9 · F10 · F11 · Alt+Shift+F11",d:"F9 toggles a breakpoint on the selected node, F10 steps over, F11 steps into, Alt+Shift+F11 steps out. While paused, the Blueprint Debugger tab (Window > Blueprint Debugger) shows the call stack and watched values.",g:["breakpoint","step","debugger","pause"]},
+{c:"blueprint",t:"tip",n:"Breakpoints not hitting? Set the debug object",d:"The Debug Filter dropdown in the Blueprint editor toolbar picks which instance you are debugging. If it says 'No debug object selected', breakpoints and watches are inert. Pick the instance from the list during PIE, or right-click an actor in the world and choose Debug this actor.",g:["debug filter","instance","breakpoint","watch"]},
+{c:"blueprint",t:"tip",n:"Watch a pin's value",d:"Right-click any pin > Watch this value. During PIE the current value is drawn next to the wire and listed in the Blueprint Debugger. Works on struct and object pins too.",g:["watch","pin","value","inspect"]},
+{c:"blueprint",t:"key",n:"Wiring shortcuts",k:"Alt+click · Ctrl+drag · Double-click wire",d:"Alt+click a pin to disconnect it, Ctrl+drag to move a connection to another pin, double-click a wire for a reroute node. Hold a letter and click empty space to place a node: B branch, S sequence, D delay, C comment. Ctrl+Alt while hovering shows the full tooltip.",g:["hotkey","node","reroute","disconnect"]},
+{c:"blueprint",t:"howto",n:"Fix 'Accessed None'",d:"The Message Log entry means a reference was null when a node read it. Click the entry to jump to the node. Then: is the variable ever set (BeginPlay order, Construction Script)? Did a Cast fail? Was the actor destroyed? Guard with Is Valid or the `?` validated-get node, and set the value before it is read.",g:["accessed none","null","is valid","runtime error"]},
+{c:"blueprint",t:"tip",n:"Draw Debug nodes",d:"Draw Debug Line, Sphere, Box, Point, Arrow, Capsule, String, and Frustum draw in the world for a duration and are stripped from Shipping. Trace nodes (Line Trace By Channel and friends) have a Draw Debug Type input: For One Frame, For Duration, or Persistent, with hit points in a second color.",g:["draw debug","trace","visualize","line"]},
+{c:"blueprint",t:"tip",n:"Find in Blueprints",d:"Ctrl+F searches the current Blueprint. Tools > Find in Blueprints searches every Blueprint in the project for a node, variable, function, or comment — the way to answer 'who calls this event?'. Indexing takes a while the first time.",g:["search","find","references","who calls"]},
+{c:"blueprint",t:"tip",n:"Hard references load everything",d:"A variable, cast, or function parameter typed as BP_Boss loads BP_Boss and everything it references as soon as your Blueprint loads. Right-click the asset > Size Map to see the chain. Use Soft Object or Soft Class references plus Async Load for optional content, and interfaces instead of casts where you only need to send a message.",g:["soft reference","memory","load time","cast","size map"]},
+{c:"blueprint",t:"tip",n:"Stop ticking what does not need to",d:"Class Defaults > Start with Tick Enabled off for anything that reacts to events; set Tick Interval for slow updates; use timers for periodic work. `DumpTicks` in the console lists every ticking Blueprint so you can check.",g:["tick","performance","timer","tick interval"]},
+{c:"blueprint",t:"tip",n:"Construction Script rules",d:"It runs every time a property changes in the editor, when the actor is moved, and on spawn at runtime. Keep it cheap and idempotent; never spawn other actors or bind delegates in it. Runtime setup belongs in BeginPlay.",g:["construction script","beginplay","editor","spawn"]},
+{c:"blueprint",t:"tip",n:"Compile warnings matter",d:"Yellow warnings are the usual source of 'it works in the editor but not packaged'. Common ones: deprecated nodes, a cast that can never succeed, an unset default. Editor Preferences > Blueprint Editor > Save on Compile keeps assets and compiled state in sync.",g:["compile","warning","packaged","save on compile"]},
+{c:"blueprint",t:"tip",n:"Run a console command from a Blueprint",k:"Execute Console Command",d:"The Execute Console Command node runs any console command at runtime (`stat unit`, `r.SetRes`, cheats). Handy for debug menus and automated tests.",g:["execute console command","node","runtime"]},
+{c:"blueprint",t:"tip",n:"Move hot loops to C++",d:"Blueprint nativization was removed in UE 5.0. A loop that runs thousands of iterations per frame in Blueprint is 10–100× slower than the same C++; keep gameplay logic in Blueprint and push tight loops, math, and per-frame work into a BlueprintCallable function.",g:["performance","nativization","cpp","loop"]},
+
+// ───────── C++ ─────────
+{c:"cpp",t:"code",n:"Log with UE_LOG",k:"UE_LOG(LogTemp, Warning, TEXT(\"Health %d for %s at %s\"), Health, *GetName(), *GetActorLocation().ToString());",d:"Verbosity: Fatal, Error, Warning, Display, Log, Verbose, VeryVerbose. Format rules: `%s` needs a `TCHAR*`, so dereference FString and FName::ToString() with `*`; `%d` int32, `%lld` int64, `%f` float or double, `%hs` for a plain `char*`. Warning and above show yellow and red in the Output Log.",g:["log","printf","format","fstring","output log"]},
+{c:"cpp",t:"code",n:"Declare your own log category",k:"// .h\nDECLARE_LOG_CATEGORY_EXTERN(LogMyGame, Log, All);\n// .cpp\nDEFINE_LOG_CATEGORY(LogMyGame);",d:"The second argument is the default verbosity compiled in, the third the maximum. Your category can then be filtered in the Output Log and adjusted at runtime with `Log LogMyGame Verbose`.",g:["log category","declare","define"]},
+{c:"cpp",t:"code",n:"Structured logging (5.2+)",k:"#include \"Logging/StructuredLog.h\"\nUE_LOGFMT(LogMyGame, Warning, \"Health {Health} for {Name}\", Health, GetName());",d:"Named fields, no format specifiers to get wrong, and the values are stored as structured data that Insights and log tools can query.",g:["logfmt","structured","log"]},
+{c:"cpp",t:"code",n:"On-screen debug message",k:"GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green,\n    FString::Printf(TEXT(\"Speed: %.1f\"), Speed));",d:"Key -1 adds a new line each call; a fixed key (say 7) overwrites the previous message with that key, which is what you want for per-frame values. Check `GEngine` is non-null in early-startup code.",g:["screen","print","debug text","gengine"]},
+{c:"cpp",t:"code",n:"check, ensure, verify",k:"check(Ptr != nullptr);\ncheckf(Count > 0, TEXT(\"Count was %d\"), Count);\nensureMsgf(Target, TEXT(\"No target on %s\"), *GetName());\nverify(DoThing());",d:"`check` crashes on failure and is compiled out in Shipping. `ensure` breaks into the debugger once, logs a callstack, and continues (`ensureAlways` fires every time). `verify` is a check whose expression still runs in Shipping. `checkNoEntry()` and `unimplemented()` mark code that must not run.",g:["assert","check","ensure","verify","crash"]},
+{c:"cpp",t:"code",n:"Draw debug shapes",k:"#include \"DrawDebugHelpers.h\"\nDrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f, 0, 1.5f);\nDrawDebugSphere(GetWorld(), Loc, 25.f, 12, FColor::Yellow, false, 2.f);\nDrawDebugString(GetWorld(), Loc, TEXT(\"here\"), nullptr, FColor::White, 2.f);",d:"Also DrawDebugBox, Capsule, Point, DirectionalArrow, Cone, Frustum. Arguments after the color: persistent, lifetime in seconds, depth priority, thickness. Compiled out in Shipping; wrap in `#if ENABLE_DRAW_DEBUG` if the surrounding code must still compile there.",g:["draw debug","line","sphere","visualize"]},
+{c:"cpp",t:"code",n:"Profiling scopes",k:"DECLARE_STATS_GROUP(TEXT(\"MyGame\"), STATGROUP_MyGame, STATCAT_Advanced);\nDECLARE_CYCLE_STAT(TEXT(\"Update AI\"), STAT_UpdateAI, STATGROUP_MyGame);\n\nvoid AMyAI::Update()\n{\n    SCOPE_CYCLE_COUNTER(STAT_UpdateAI);\n    TRACE_CPUPROFILER_EVENT_SCOPE(AMyAI::Update);\n    // ...\n}",d:"The cycle stat appears under `stat MyGame`; the trace scope appears as a named bar in Unreal Insights. `QUICK_SCOPE_CYCLE_COUNTER(STAT_Name)` skips the declarations for one-off scopes. `SCOPE_LOG_TIME_FUNC()` from ScopedTimers.h simply logs how long the function took.",g:["stat","insights","scope","cycle counter","timing"]},
+{c:"cpp",t:"code",n:"Console commands from code",k:"// On a Pawn, PlayerController, GameMode, GameInstance or CheatManager:\nUFUNCTION(Exec)\nvoid GiveGold(int32 Amount);\n\n// Run a command from anywhere:\nGEngine->Exec(GetWorld(), TEXT(\"stat unit\"));",d:"An Exec function becomes a console command with its parameters (`GiveGold 100`). Put cheats on a UCheatManager subclass, assign it to the PlayerController's CheatClass, and they vanish from Shipping automatically.",g:["exec","cheat","cheat manager","console"]},
+{c:"cpp",t:"code",n:"Console variables from code",k:"static TAutoConsoleVariable<float> CVarSpawnRate(\n    TEXT(\"mygame.SpawnRate\"), 1.0f,\n    TEXT(\"Multiplier on enemy spawn rate\"), ECVF_Cheat);\n\nfloat Rate = CVarSpawnRate.GetValueOnGameThread();",d:"Tunable at runtime from the console, from ini files, and from the Console Variables Editor. `FAutoConsoleCommand` registers a lambda as a command. `IConsoleManager::Get().FindConsoleVariable(TEXT(\"r.ScreenPercentage\"))` reads engine cvars.",g:["cvar","console variable","tuning","autoconsolevariable"]},
+{c:"cpp",t:"code",n:"Visual Logger",k:"UE_VLOG(this, LogMyGame, Log, TEXT(\"Target lost\"));\nUE_VLOG_LOCATION(this, LogMyGame, Log, Loc, 30.f, FColor::Red, TEXT(\"last seen\"));\nUE_VLOG_SEGMENT(this, LogMyGame, Log, Start, End, FColor::Green, TEXT(\"path\"));",d:"Records per-actor text and shapes with timestamps. Open Tools > Debug > Visual Logger (or type `VisLog`), press Record, and scrub the timeline after the fact — the right tool for AI and movement bugs you cannot pause in time. Blueprint has matching VisLog nodes. Compiled out in Shipping.",g:["vislog","visual logger","ai","timeline","record"]},
+{c:"cpp",t:"code",n:"Break, and dump a callstack",k:"UE_DEBUG_BREAK();\nFDebug::DumpStackTraceToLog(ELogVerbosity::Warning);",d:"`UE_DEBUG_BREAK` stops in the debugger only when one is attached. The stack dump answers 'who called this?' without a debugger.",g:["callstack","breakpoint","stack trace"]},
+{c:"cpp",t:"howto",n:"Debugger setup that actually shows values",d:"Attach Visual Studio or Rider to UnrealEditor.exe (Debug > Attach to Process), or launch the DebugGame Editor configuration. Development builds optimize, so locals show as 'optimized away'; wrap the file in `UE_DISABLE_OPTIMIZATION` / `UE_ENABLE_OPTIMIZATION` while investigating. Install `Engine/Extras/VisualStudioDebugging/Unreal.natvis` (the Visual Studio Integration Tool does it) so TArray, FString, and FName display their contents.",g:["visual studio","rider","natvis","optimized away","attach"]},
+{c:"cpp",t:"code",n:"Print names safely",k:"GetNameSafe(Actor)                 // \"None\" when null\n*Actor->GetClass()->GetName()\n*Vec.ToString()   *Rot.ToCompactString()   *Xform.ToHumanReadableString()",d:"`GetNameSafe` never crashes on null. Remember the `*` when passing an FString to `%s`.",g:["getname","tostring","fvector","log"]},
+{c:"cpp",t:"tip",n:"IsValid vs nullptr",k:"if (IsValid(Target)) { /* safe */ }",d:"A raw `!= nullptr` passes for an actor that was destroyed this frame; `IsValid` also checks the pending-kill or garbage state. Use `IsValidChecked` when null would be a bug. For weak pointers, `TWeakObjectPtr::IsValid()`.",g:["null","pending kill","destroyed","valid"]},
+{c:"cpp",t:"tip",n:"Live Coding limits",k:"Ctrl+Alt+F11",d:"Recompiles changed .cpp files while the editor runs. It cannot handle new UPROPERTY or UFUNCTION declarations, changed class layouts, or edited headers reliably — for those, close the editor and build. If the editor behaves strangely after several patches, restart it.",g:["live coding","hot reload","compile","header"]},
+{c:"cpp",t:"tip",n:"Unity builds hide missing includes",k:"// MyGame.Build.cs\nbUseUnity = false;",d:"Unity builds glue many .cpp files together, so a file can compile only because a neighbor included the header it needs. Turning unity off (temporarily, or for your module) surfaces every missing `#include` before it bites in a different configuration.",g:["build.cs","include","unity build","compile error"]},
+{c:"cpp",t:"tip",n:"Read a crash",d:"Open the newest file in Saved/Logs and search for 'Fatal error' or 'Assertion failed'; the lines before it are the reason, the callstack follows. If the callstack is addresses only, symbols are missing: keep the .pdb next to the .exe for Development, or enable Project Settings > Packaging > Include Debug Files for Shipping.",g:["crash","callstack","pdb","symbols","fatal error"]},
+// ───────── GAMEPLAY & INPUT ─────────
+{c:"gameplay",t:"cmd",n:"ShowDebug categories",k:"ShowDebug AbilitySystem",d:"Draws a HUD overlay for the debug target (your pawn by default). Categories: `Animation`, `Bones`, `Camera`, `Input`, `EnhancedInput`, `AbilitySystem`, `Vehicle`. `ShowDebug` alone toggles the whole overlay; `ShowDebugToggleSubCategory Name` expands sections inside a category.",g:["showdebug","hud","overlay","gas","camera","input"]},
+{c:"gameplay",t:"key",n:"Gameplay Debugger",k:"' (apostrophe)",d:"Toggles the Gameplay Debugger overlay for the actor under the crosshair or your pawn; number keys switch categories (Navmesh, AI, Behavior Tree, EQS, Perception, Abilities). Configure keys and categories under Project Settings > Gameplay Debugger. `EnableGDT` toggles it from the console.",g:["gameplay debugger","ai","navmesh","behavior tree","enablegdt"]},
+{c:"gameplay",t:"cmd",n:"Cheat movement and invulnerability",k:"god · ghost · fly · walk · teleport",d:"`god` blocks damage, `ghost` flies through geometry, `fly` flies with collision, `walk` restores normal movement, `teleport` jumps to the surface under the crosshair. `changesize 2` scales the pawn. Only available outside Shipping.",g:["cheat","noclip","invincible","teleport"]},
+{c:"gameplay",t:"cmd",n:"Spawn and destroy by class",k:"summon /Game/Blueprints/BP_Enemy.BP_Enemy_C",d:"`summon` spawns a class at the crosshair; native classes work by name (`summon PointLight`), Blueprints need the full path with `_C`. `DestroyAll BP_Enemy_C` removes every instance of a class.",g:["spawn","destroyall","summon","cheat"]},
+{c:"gameplay",t:"howto",n:"Trace or overlap not hitting",d:"Check, in order: the Object Type of the thing you expect to hit versus the channel you trace with (Object Type and Trace Channel are different tables); Collision Enabled must include Query; overlaps require Generate Overlap Events on both components; a trace that starts inside a mesh reports no hit (use Ignore Self and start slightly outside); set Draw Debug Type to For Duration to see the actual ray.",g:["line trace","overlap","collision channel","object type","hit"]},
+{c:"gameplay",t:"tip",n:"Collision Analyzer",d:"Tools > Debug > Collision Analyzer records every trace, sweep, and overlap for a period: who called it, which channel, what it hit, and how long it took. Sort by cost to find the Blueprint doing a thousand sphere overlaps per frame.",g:["collision analyzer","trace","cost","overlap"]},
+{c:"gameplay",t:"howto",n:"Input stopped working",d:"`ShowDebug EnhancedInput` lists active mapping contexts, actions, and current values. If nothing fires: the mapping context was never added (or was added on the wrong controller), the input mode is UI Only, a HUD or Pawn has Consume Input blocking it, or the PIE window simply lost focus — click in it, or press Shift+F1 and click.",g:["enhanced input","mapping context","input mode","focus","consume input"]},
+{c:"gameplay",t:"howto",n:"SpawnActor returns null",d:"The spawn was blocked by collision at that transform. Set Collision Handling Override to Always Spawn, or Adjust If Possible But Always Spawn. Also check the class is not abstract, the world is valid (a Blueprint Library function needs a World Context), and that you are on the server in multiplayer.",g:["spawn","null","collision handling","always spawn"]},
+{c:"gameplay",t:"tip",n:"Inspect anything with the debug camera",d:"`ToggleDebugCamera` shows the actor, component, and material under the crosshair with distance and hit location. Combine with `FreezeRendering` or `slomo 0.1` to walk up to something mid-explosion.",g:["debug camera","inspect","actor","material"]},
+{c:"gameplay",t:"cmd",n:"Level streaming and World Partition",k:"stat levels\nwp.Runtime.ToggleDrawRuntimeHash2D 1",d:"`stat levels` colors each streaming level by state (loaded, unloading, pending) with load time. The `wp.Runtime.*` variables draw World Partition cells and their streaming state; type the prefix and press Tab to see what your version has. `Log LogStreaming Verbose` explains why something did or did not load.",g:["level streaming","world partition","cells","loading"]},
+{c:"gameplay",t:"cmd",n:"Gameplay Ability System debug",k:"ShowDebug AbilitySystem\nAbilitySystem.Debug.NextCategory\nAbilitySystem.Debug.NextTarget",d:"The overlay pages through attributes, active gameplay effects, granted abilities, and tags. The Gameplay Debugger also has an Abilities category. `Log LogAbilitySystem Verbose` prints activation failures with the reason (blocked tags, cost, cooldown).",g:["gas","abilities","attributes","gameplay effects","tags"]},
+{c:"gameplay",t:"tip",n:"BeginPlay order is not guaranteed",d:"Actors placed in a level call BeginPlay in an order you should not rely on; reading another actor's data in BeginPlay can be one frame too early. Use an event or delegate from the owner, a GameState 'match started' broadcast, or Init functions called by whoever spawns.",g:["beginplay","order","initialization","race"]},
+{c:"gameplay",t:"tip",n:"Test in Standalone before packaging",d:"Play > Standalone Game runs the game in its own process with the editor world unloaded, which catches editor-only assumptions (editor-only actors, WITH_EDITOR code, viewport focus quirks) long before a cook.",g:["standalone","pie","editor only","package"]},
+
+// ───────── UI ─────────
+{c:"ui",t:"tip",n:"Widget Reflector",k:"WidgetReflector",d:"Tools > Debug > Widget Reflector (or the console command). Use Pick Hit-Testable Widgets to click anything on screen and see which widget actually receives the input, its full parent chain, visibility, and focus state. Pick Painted Widgets shows what is drawn regardless of input.",g:["widget reflector","hit test","focus","tree","inspect"]},
+{c:"ui",t:"cmd",n:"Slate stats",k:"stat slate",d:"Widget count, paint time, layout time, and batch counts. If Slate is a noticeable part of the game thread, the usual culprits are property bindings, giant canvas panels, and widgets that never stop ticking.",g:["slate","umg","performance","paint"]},
+{c:"ui",t:"howto",n:"Visibility values, explained",d:"Visible: drawn and takes input. Hidden: not drawn but still occupies layout space. Collapsed: gone from layout. Hit Test Invisible: drawn, ignores input for itself and all children. Self Hit Test Invisible: ignores input itself but children still receive it. A button that will not click almost always has a parent set to Hit Test Invisible or an invisible widget floating above it — use the reflector picker.",g:["visibility","collapsed","hidden","hit test invisible","button not clickable"]},
+{c:"ui",t:"howto",n:"Mouse cursor and input mode",d:"No cursor: set Show Mouse Cursor on the PlayerController. Game keeps reacting while a menu is up: call Set Input Mode UI Only (or Game and UI) when opening, and Set Input Mode Game Only when closing. Gamepad navigation needs a widget with keyboard focus: Set Keyboard Focus or Set User Focus on the first button.",g:["input mode","show mouse cursor","focus","gamepad","menu"]},
+{c:"ui",t:"tip",n:"Bindings are evaluated every frame",d:"Every property binding on a text block or progress bar runs its function each frame whether or not anything changed. Replace with event-driven Set Text and Set Percent calls when the data changes. Wrap complex, rarely changing panels in an Invalidation Box; use a Retainer Box for expensive effects on static content.",g:["binding","performance","invalidation box","retainer","set text"]},
+{c:"ui",t:"tip",n:"Canvas Panel is the expensive one",d:"Canvas Panel layouts cost more than Overlay, Horizontal or Vertical Box, and Grid, and nesting canvases multiplies it. Use a Canvas only at the root, or for freely positioned things like markers.",g:["canvas panel","layout","performance","overlay"]},
+{c:"ui",t:"cmd",n:"Show the hit-test grid",k:"Slate.HitTestGridDebugging 1",d:"Draws the rectangles Slate uses to decide what the mouse is over. When a click lands on the wrong thing, this shows the overlapping area immediately.",g:["hit test","click","debug draw","slate"]},
+{c:"ui",t:"cmd",n:"Log Slate input events",k:"SlateDebugger.Start",d:"Streams mouse, keyboard, and focus events with the receiving widget to the Output Log. `SlateDebugger.Stop` ends it. Type `SlateDebugger.` and Tab to see the finer switches (event, paint, invalidation debugging).",g:["slate debugger","events","focus","log"]},
+{c:"ui",t:"howto",n:"Widget does not show up",d:"Create Widget needs a valid Owning Player; Add to Viewport must be called and the return of Create Widget stored, or it is garbage collected; check Z-order against other widgets; the root Canvas may be Collapsed; Pre Construct runs in the designer but Construct only at runtime; in multiplayer, only create UI on the locally controlled client.",g:["add to viewport","create widget","owning player","not visible"]},
+{c:"ui",t:"tip",n:"Test resolutions and DPI",k:"r.SetRes 2560x1440w\nr.DebugSafeZone.Mode 1",d:"The Designer's Screen Size dropdown previews layouts; `r.SetRes` tests them live. DPI scaling comes from Project Settings > Engine > User Interface > DPI Curve — anchor and size widgets in scaled units, not pixels. The safe-zone cvar draws the TV-safe area for console targets.",g:["dpi","resolution","safe zone","anchors","scaling"]},
+{c:"ui",t:"tip",n:"Widgets tick when they are visible",d:"A widget's Tick runs whenever it is on screen — including when Hidden, since Hidden keeps it in layout. Collapse widgets you are not showing. Widgets that hold a reference to gameplay actors keep them alive; clear references on Remove from Parent.",g:["tick","hidden","collapsed","performance","reference"]},
+
+// ───────── ANIMATION ─────────
+{c:"animation",t:"cmd",n:"Animation HUD overlay",k:"ShowDebug Animation",d:"For the debug target: active state machines and states, montages with weights, sync groups, curves, and notifies. `ShowDebugToggleSubCategory Graph` (also Curves, Montages, SyncGroups, Notifies, FullAnimGraph, FullBlendspaceDisplay) expands each section.",g:["showdebug","state machine","montage","sync group","curves"]},
+{c:"animation",t:"cmd",n:"Draw the skeleton",k:"ShowDebug Bones",d:"Draws every bone of the debug target's skeletal mesh over the character. Use with `slomo 0.1` to inspect blends and root motion.",g:["bones","skeleton","draw"]},
+{c:"animation",t:"howto",n:"Debug an Animation Blueprint live",d:"Open the AnimBP during PIE and pick the instance from the Debug Filter dropdown. Active links glow with their blend weight, the state machine shows the current state, and every variable in the Event Graph can be watched. Right-click any pose node > Toggle Pose Watch to draw the skeleton as it looks at that exact point in the graph.",g:["animbp","pose watch","debug filter","state machine","blend weight"]},
+{c:"animation",t:"tip",n:"Rewind Debugger",d:"Tools > Debug > Rewind Debugger (enable the Rewind Debugger and Animation Insights plugins). Press Record, play, then scrub backward frame by frame: poses, anim graph state, montage sections, curve values, and variables are shown for the selected actor at that moment.",g:["rewind","record","scrub","animation insights","trace"]},
+{c:"animation",t:"cmd",n:"Animation cost",k:"stat anim",d:"Update and evaluation time, how much ran on worker threads, and skinning cost. If most time is on the game thread, check that the AnimBP's Class Settings allow multi-threaded update and that your Blueprint Update Animation is thin.",g:["performance","evaluation","threads"]},
+{c:"animation",t:"cmd",n:"Force single-threaded animation",k:"a.ParallelAnimUpdate 0\na.ParallelAnimEvaluation 0",d:"Runs animation on the game thread so breakpoints behave and race conditions disappear. If a bug vanishes with these set, you are touching game-thread objects from the thread-safe update — move that logic to Blueprint Update Animation or use Property Access.",g:["threading","race condition","thread safe","property access"]},
+{c:"animation",t:"tip",n:"Thread-safe update vs Update Animation",d:"Blueprint Update Animation runs on the game thread each frame; Blueprint Thread Safe Update Animation runs on a worker thread and must only read via Property Access nodes and thread-safe functions. A missing lightning icon on an AnimGraph pin means the fast path is broken: the node is running Blueprint logic instead of reading a variable directly.",g:["thread safe","property access","fast path","update animation"]},
+{c:"animation",t:"cmd",n:"Update Rate Optimization",k:"a.URO.Enable 0",d:"URO skips animation frames on distant meshes, which shows up as choppy far-away characters. Disable it globally to confirm, then tune the Skeletal Mesh Component's Enable Update Rate Optimizations setting per mesh instead.",g:["uro","choppy","distance","lod"]},
+{c:"animation",t:"howto",n:"Animation freezes when not rendered",d:"Skeletal Mesh Component > Optimization > Visibility Based Anim Tick Option. The default stops ticking when not rendered, which breaks sockets, physics, and notifies for things behind the camera. Set Always Tick Pose and Refresh Bones for the player and anything that must keep moving.",g:["offscreen","not rendered","tick pose","sockets","notify"]},
+{c:"animation",t:"howto",n:"Root motion not moving the character",d:"Enable Root Motion on the animation asset or montage; set the AnimBP's Root Motion Mode (Root Motion from Montages Only, or from Everything); make sure the animation actually has root bone translation (check the Root bone in the asset editor). Sliding feet on a Character usually means root motion is applied while Character Movement also drives the capsule.",g:["root motion","sliding","montage","character movement"]},
+{c:"animation",t:"howto",n:"Montage will not play",d:"The montage's Slot must exist as a Slot node in the AnimBP's graph, and the Group must match. Play Montage returns 0 if it failed. A montage playing but invisible usually means the slot sits after a cached pose or the blend-in overrides it; check `ShowDebug Animation` for its weight.",g:["montage","slot","play montage","weight"]},
+{c:"animation",t:"tip",n:"Notify not firing",d:"Notifies inside a blend-in or on the last frame can be skipped; Trigger Weight Threshold and Notify Trigger Mode matter; a montage stopped before the notify never reaches it; Anim Notify States need both Begin and End. Preview them in the animation editor with the Notifies track visible.",g:["anim notify","notify state","trigger weight"]},
+{c:"animation",t:"tip",n:"Animation Insights",d:"An Unreal Insights trace with the Animation channel records every pose, curve, notify, and montage event per frame for every skeletal mesh. It is what the Rewind Debugger reads, and it works on packaged builds too.",g:["insights","trace","record","curve","notify"]},
+
+// ───────── PHYSICS & VEHICLES ─────────
+{c:"physics",t:"cmd",n:"Show collision in game",k:"show collision",d:"Draws simple collision for everything. In the editor viewport, `Alt+C` does the same, and the Player Collision and Visibility Collision view modes color by channel response.",g:["collision","draw","visualize"]},
+{c:"physics",t:"cmd",n:"Physics cost",k:"stat physics",d:"Simulation time per stage: broadphase, narrowphase, constraints, and scene queries. Many queries per frame usually come from traces and overlaps in gameplay code, not from simulated bodies.",g:["performance","chaos","queries"]},
+{c:"physics",t:"cmd",n:"Chaos debug draw",k:"p.Chaos.DebugDraw.Enabled 1",d:"Draws shapes, contacts, and constraints from the physics thread's point of view, which can differ from what the render meshes show. Type `p.Chaos.DebugDraw.` and press Tab for the individual toggles in your version.",g:["chaos","debug draw","contacts","constraints"]},
+{c:"physics",t:"tip",n:"Chaos Visual Debugger",d:"Tools > Debug > Chaos Visual Debugger (5.4+). Record a session and scrub through the physics simulation with every body, contact point, and constraint from the solver's data. The tool for tunneling, jitter, and 'why did it explode?'.",g:["cvd","chaos","record","contacts","jitter"]},
+{c:"physics",t:"howto",n:"Fix frame-rate-dependent physics",d:"Project Settings > Engine > Physics: enable Substepping (Max Substep Delta Time 0.01666 or 0.00833, Max Substeps 6–8) and Tick Physics Async with a fixed Async Fixed Time Step. Without a fixed step, vehicles, ragdolls, and stacks behave differently at 30 and 144 fps and you end up tuning against ghosts.",g:["substepping","fixed timestep","async physics","framerate","vehicle"]},
+{c:"physics",t:"howto",n:"Simulate Physics does nothing",d:"The mesh needs simple collision (a physics body); Use Complex Collision As Simple cannot simulate. Collision Enabled must include Physics; the collision preset must not be No Collision; mass must be non-zero. Skeletal meshes need a Physics Asset with bodies.",g:["simulate physics","complex as simple","collision enabled","mass","ragdoll"]},
+{c:"physics",t:"howto",n:"Falls through the floor",d:"Check the floor's collision (a static mesh with no simple collision and complex collision disabled collides with nothing), the pawn's capsule preset, and the channel responses between them. Fast bodies tunneling through thin walls: enable CCD on the moving body or thicken the wall.",g:["floor","tunneling","ccd","capsule","collision"]},
+{c:"physics",t:"tip",n:"Overlaps need both sides",d:"Generate Overlap Events must be on for both components, and each must respond Overlap (or Block) to the other's Object Type. Static meshes default to Generate Overlap Events off.",g:["overlap","generate overlap events","object type"]},
+{c:"physics",t:"tip",n:"The road needs a Physical Material",d:"Surfaces with no Physical Material use the default friction of 0.7. Assign one to the material with Friction near 1.0, tick Override Friction Combine Mode and set it to Max so a grippy tire multiplier is not averaged down. Physical materials also drive surface-type footsteps and decals.",g:["physical material","friction","surface type","grip"]},
+{c:"physics",t:"cmd",n:"Chaos Vehicle debug HUD",k:"ShowDebug Vehicle",d:"Speed, RPM, gear, throttle, steering, and per-wheel state for the vehicle you are driving. Pair it with the `p.Vehicle.*` force draws.",g:["vehicle","chaos vehicle","wheels","rpm"]},
+{c:"physics",t:"cmd",n:"Vehicle force vectors",k:"p.Vehicle.ShowAllForces 1",d:"Draws every force Chaos applies to the vehicle. Narrower views: `p.Vehicle.ShowSuspensionForces 1`, `p.Vehicle.ShowTireForces 1`, `p.Vehicle.ShowSuspensionRaycasts 1`, `p.Vehicle.ShowWheelCollisionNormal 1`, `p.Vehicle.ShowBatchQueryExtents 1`. Set 0 to hide. A short, saturated lateral tire arrow while steering hard means the tire is at its grip limit — fix grip, not steer angle.",g:["vehicle","tire forces","suspension","grip","raycast"]},
+{c:"physics",t:"howto",n:"Vehicle turns too sharp when slow, will not turn when fast",d:"It is the Steering Curve, not Max Steer Angle. Chaos computes actual steer as Max Steer Angle × SteeringCurve(speed in km/h) × input, and the template curve drops to about 0.1 by 120 km/h. Rebuild it under Movement Component > Steering Setup: 0→0.9, 40→0.85, 90→0.65, 150→0.45, 250→0.35 (extend the last key past your top speed). Then lower Steering Input Rate's Rise Rate to about 1.8 and add a Downforce Coefficient near 2.0.",g:["vehicle","steering curve","understeer","max steer angle","darty"]},
+{c:"physics",t:"tip",n:"Vehicle edits during PIE do nothing",d:"Wheel and movement settings are read at BeginPlay and cached on the physics thread. Stop PIE, edit, Compile and Save, then play. Also confirm the Wheel Setups array references the Wheel Blueprint you actually edited — templates ship several look-alikes.",g:["vehicle","pie","wheel blueprint","beginplay"]},
+{c:"physics",t:"cmd",n:"Disable cloth simulation",k:"p.ClothPhysics 0",d:"Turns off all cloth to check whether capes and flags are what is eating your physics budget or causing the jitter.",g:["cloth","performance","jitter"]},
+
+// ───────── NETWORKING ─────────
+{c:"networking",t:"cmd",n:"Network stats",k:"stat net",d:"Ping, packets and bytes in and out, channels, and replicated actors per frame. Bytes out on the server growing with player count is normal; growing while idle is a replication bug.",g:["ping","bandwidth","packets","channels"]},
+{c:"networking",t:"cmd",n:"Simulate a bad network",k:"net.PktLag 150\nnet.PktLagVariance 30\nnet.PktLoss 5\nnet.PktOrder 1",d:"Adds latency (ms), jitter, packet loss (%), and reordering in non-Shipping builds. Every multiplayer feature should be tested this way before it is called done. Play dropdown > Advanced Settings > Network Emulation applies the same to PIE.",g:["lag","latency","packet loss","emulation","jitter"]},
+{c:"networking",t:"howto",n:"Multiplayer in PIE",d:"Play dropdown: set Number of Players to 2 or more, Net Mode to Play As Listen Server or Play As Client (which also spawns a dedicated server). Turn off Run Under One Process for realistic separation. Each window's title shows Server or Client N so you know whose bug you are looking at.",g:["pie","listen server","dedicated","number of players"]},
+{c:"networking",t:"arg",n:"Local dedicated server and client",k:"UnrealEditor.exe MyProject.uproject MyMap -server -log\nUnrealEditor.exe MyProject.uproject 127.0.0.1 -game -log",d:"Runs a headless server and a client from the editor binary. In a packaged build the server executable is built separately (Server target) and the client connects with `open 127.0.0.1`.",g:["dedicated server","command line","connect","open"]},
+{c:"networking",t:"cmd",n:"Network Profiler",k:"netprofile",d:"Toggles recording of every replicated property and RPC with its size into a `.nprof` file under Saved/Profiling. Open it with NetworkProfiler.exe from Engine/Binaries/DotNET to see which actors and properties eat bandwidth.",g:["bandwidth","nprof","replication","rpc","profiler"]},
+{c:"networking",t:"cmd",n:"Networking log categories",k:"Log LogNet Verbose\nLog LogNetTraffic Verbose\nLog LogNetPackageMap Verbose\nLog LogRep Verbose",d:"`LogNet` for connections and travel, `LogNetTraffic` for per-packet contents, `LogNetPackageMap` for 'could not find object' RPC failures, `LogRep` for property replication, `LogNetDormancy` for dormant actors.",g:["log","lognet","rpc failed","replication"]},
+{c:"networking",t:"cmd",n:"Show movement corrections",k:"p.NetShowCorrections 1",d:"Draws the client and server capsule positions whenever Character Movement corrects the client. Constant corrections mean client and server run different movement logic: an ability that moves the character on one side only, physics interactions, or a mismatched max speed.",g:["character movement","correction","rubber banding","prediction"]},
+{c:"networking",t:"howto",n:"RPC does not run",d:"Server RPCs only run if the calling client owns the actor: its PlayerController, its possessed Pawn, or an actor whose Owner was set on the server. Client and Multicast RPCs must be called on the server. The actor must have Replicates on. Unreliable RPCs on an actor not yet relevant to that client are dropped silently.",g:["rpc","owner","server","multicast","replicates"]},
+{c:"networking",t:"howto",n:"Variable does not replicate",d:"The actor needs Replicates on; components need Component Replicates (SetIsReplicated in C++); C++ properties need `Replicated` plus a `DOREPLIFETIME` entry in GetLifetimeReplicatedProps. Values only travel server → client, and only when changed on the server. In C++ OnRep runs on clients only; a Blueprint RepNotify function also runs on the server when you set the variable there.",g:["replicated","repnotify","onrep","doreplifetime","component replicates"]},
+{c:"networking",t:"tip",n:"Authority checks",d:"Has Authority (Switch Has Authority) tells you whether this instance is the server; Is Locally Controlled tells you whether this pawn belongs to this machine. GameMode exists only on the server; GameState and PlayerState are replicated to everyone; UI belongs on the locally controlled client.",g:["has authority","locally controlled","gamemode","gamestate","playerstate"]},
+{c:"networking",t:"tip",n:"Relevancy and update rate",d:"Actors past Net Cull Distance Squared are not sent to that client at all — the usual cause of 'it works next to it but not far away'. Always Relevant forces it. Net Update Frequency caps how often changes are sent; Min Net Update Frequency is the floor when adaptive updates are on.",g:["relevancy","cull distance","net update frequency","always relevant"]},
+{c:"networking",t:"cmd",n:"Travel between maps",k:"ServerTravel MyMap",d:"Run on the server to move everyone (seamless if Use Seamless Travel is on in the GameMode). `open MyMap?listen` starts hosting; `disconnect` leaves a session.",g:["servertravel","seamless travel","open","disconnect"]},
+
+// ───────── AI & NAVIGATION ─────────
+{c:"ai",t:"key",n:"Gameplay Debugger for AI",k:"' then 0–5",d:"Apostrophe toggles it; categories by number: 0 Navmesh, 1 AI (controller, pawn, current task), 2 Behavior Tree (active node path, Blackboard), 3 EQS (scored items), 4 Perception (sight cones, heard stimuli), 5 Abilities. Numbers can differ if you added categories — check Project Settings > Gameplay Debugger.",g:["gameplay debugger","behavior tree","eqs","perception","blackboard"]},
+{c:"ai",t:"cmd",n:"Show the navmesh in game",k:"show navigation",d:"Draws the walkable navmesh in PIE. In the editor viewport, press `P`. Green is walkable; missing patches mean the geometry is not affecting navigation or the agent does not fit.",g:["navmesh","navigation","draw","p key"]},
+{c:"ai",t:"cmd",n:"Rebuild navigation",k:"RebuildNavigation",d:"Forces a full navmesh rebuild from the console; Build > Build Paths does the same in the editor.",g:["navmesh","build paths","rebuild"]},
+{c:"ai",t:"howto",n:"Move To fails or the AI stands still",d:"Check: a Nav Mesh Bounds Volume covers the area; the RecastNavMesh agent radius and height match the pawn (Project Settings > Navigation System > Supported Agents); the target point is on the navmesh (Project Point To Navigation); Runtime Generation is Dynamic if geometry moves or streams; moving meshes have Can Ever Affect Navigation off; the AI Controller actually possesses the pawn (Auto Possess AI).",g:["move to","navmesh","agent","runtime generation","possess"]},
+{c:"ai",t:"howto",n:"Debug a Behavior Tree live",d:"Open the BT asset during PIE and pick the AI from the Debug Filter dropdown. The active path is highlighted, the Blackboard panel shows live values, and you can put breakpoints on tasks and decorators. A task that immediately drops back to the root usually has a failing decorator or a missing Blackboard key.",g:["behavior tree","blackboard","breakpoint","decorator","debug filter"]},
+{c:"ai",t:"tip",n:"EQS Testing Pawn",d:"Drop an EQSTestingPawn in the level, assign a query, and the scored items draw in the editor without playing. Change the query and watch the scores update — far faster than running the game for every tweak.",g:["eqs","environment query","testing pawn","scores"]},
+{c:"ai",t:"howto",n:"Perception not seeing the player",d:"The Perception component needs the Sight sense configured with Detect Affiliation flags (pawns without a team count as Neutral); the target needs an AIPerceptionStimuliSource for that sense, or auto-registration on; check sight radius, lose-sight radius, and peripheral vision angle; walls block line of sight to the pawn's eye location. The Gameplay Debugger Perception category draws all of it.",g:["perception","sight","stimuli source","affiliation","line of sight"]},
+{c:"ai",t:"tip",n:"State Tree debugger",d:"The State Tree editor has a Debugger tab (5.2+) that shows active states, evaluated conditions, and transitions for a selected instance in PIE, backed by a trace. Enable it from the asset's toolbar.",g:["state tree","debugger","transitions","conditions"]},
+{c:"ai",t:"tip",n:"Visual Logger is made for AI",d:"Record with Tools > Debug > Visual Logger and scrub through an AI's decisions after the fact: perception updates, Behavior Tree task changes, path requests, and any UE_VLOG shapes you added. Behavior Tree and Perception log to it out of the box.",g:["visual logger","vislog","record","timeline"]},
+
+// ───────── AUDIO ─────────
+{c:"audio",t:"cmd",n:"List active sounds",k:"au.Debug.Sounds 1",d:"On-screen table of every active sound with distance, volume, priority, and whether it is virtualized. `au.Debug.SoundWaves 1`, `au.Debug.SoundCues 1`, and `au.Debug.SoundMixes 1` narrow it down; `stat sounds` is the classic equivalent.",g:["sounds","active","volume","priority","virtualize"]},
+{c:"audio",t:"cmd",n:"Draw sounds in 3D",k:"au.3dVisualize.Enabled 1",d:"Draws a marker at every playing sound's location with its name and attenuation radius, so you can see the one that is playing from the wrong place.",g:["3d","attenuation","location","spatial"]},
+{c:"audio",t:"cmd",n:"Solo and mute",k:"au.Solo.SoundCues MyCue\nau.Mute.SoundClass Music",d:"Isolate a cue, wave, or class while everything else is silenced, or mute a class to hear what is underneath. Type `au.Solo.` and `au.Mute.` with Tab to see the exact names in your version.",g:["solo","mute","sound class","isolate"]},
+{c:"audio",t:"howto",n:"Sound does not play or is inaudible",d:"Check in order: attenuation falloff distance versus the listener; Sound Class volume and any pushed Sound Mix; an Audio Volume in the level applying reverb or ducking; Concurrency limits (the debug table marks culled sounds); Max Channels in Project Settings > Audio; and, for Play Sound At Location, that the location is not (0,0,0).",g:["attenuation","sound class","concurrency","audio volume","silent"]},
+{c:"audio",t:"tip",n:"Audio Insights",d:"Enable the Audio Insights plugin (5.4+) and open it from the Tools menu for a live dashboard of sources, submixes, and virtual loops with meters, plus a log of every play and stop with its reason.",g:["audio insights","dashboard","submix","meters"]},
+{c:"audio",t:"tip",n:"MetaSound debugging",d:"Open a MetaSound while it plays in PIE and use Audition to hear it in the editor. Select an instance from the toolbar to watch live values on wires. Trigger nodes light up as they fire, which is the quickest way to spot a gate that never opens.",g:["metasound","audition","live values","trigger"]},
+{c:"audio",t:"arg",n:"Run without audio",k:"-NoSound",d:"Skips audio device initialization. Useful on CI machines and when a broken audio driver hangs startup.",g:["command line","headless","no sound"]},
+
+// ───────── COMMON ERRORS ─────────
+{c:"errors",t:"err",n:"Accessed None trying to read property",d:"Blueprint read a null reference. Click the Message Log entry to open the node, then check where the variable is meant to be set. Guard with Is Valid; do not just hide the warning.",g:["null","blueprint","runtime error","message log"]},
+{c:"errors",t:"err",n:"Attempted to access X via property Y, but X is not valid (pending kill or garbage)",d:"You kept a reference to an actor that was destroyed. Clear references on Destroyed or EndPlay, use Is Valid before use, or hold a Soft or Weak reference instead.",g:["pending kill","garbage","destroyed","reference"]},
+{c:"errors",t:"err",n:"Assertion failed: … / Fatal error!",d:"A `check` fired. The condition in the message tells you what was assumed; the callstack right below points at the caller. Search the log for 'Assertion failed'. Common: a null pointer passed into an engine function, an index out of bounds on a TArray, a UObject used after GC.",g:["check","crash","callstack","fatal"]},
+{c:"errors",t:"err",n:"Ensure condition failed",d:"A non-fatal `ensure`. The game continues but something was in an unexpected state; it logs once per site unless it is `ensureAlways`. Find 'Ensure condition failed' in the log for the callstack.",g:["ensure","warning","callstack"]},
+{c:"errors",t:"err",n:"LNK2019: unresolved external symbol",d:"Three usual causes: the module that owns the symbol is missing from `PublicDependencyModuleNames` in your Build.cs (UMG, Slate, SlateCore, AIModule, NavigationSystem, EnhancedInput, GameplayAbilities, Niagara, ChaosVehicles…); your class lacks the `MYGAME_API` macro when used from another module; or you declared a function and never wrote the body.",g:["linker","build.cs","module","api macro","cpp"]},
+{c:"errors",t:"err",n:"error C2027 / C2039: use of undefined type",d:"You forward-declared a class and then used its members. Add the real `#include` in the .cpp. Unity builds often hide this until a clean build or a different configuration.",g:["include","forward declaration","unity build","cpp"]},
+{c:"errors",t:"err",n:"Live Coding: patch failed / no changes applied",d:"Header changes, new UPROPERTY or UFUNCTION declarations, and changed class layouts are outside what Live Coding can patch. Close the editor, build from the IDE, reopen. If it keeps failing on trivial .cpp edits, delete the Intermediate folder and regenerate project files.",g:["live coding","header","compile","intermediate"]},
+{c:"errors",t:"err",n:"Failed to load package / Failed to find object / redirector",d:"An asset was moved or renamed outside the editor, or a redirector was left behind. Right-click the folder in the Content Browser > Fix Up Redirectors; use the Reference Viewer to find who still points at the old path. `Log LogLinker Verbose` names the missing package.",g:["redirector","missing asset","package","loglinker"]},
+{c:"errors",t:"err",n:"Packaging failed: UATHelper … Error",d:"Scroll up in the Output Log to the first line containing 'Error:'; everything after it is fallout. Usual suspects: a Blueprint that does not compile, a map missing from Project Settings > Packaging > List of maps to include, a shader compile failure, or a plugin not built for the target. Deleting Saved and Intermediate and running Validate Assets on the Content folder fixes most stubborn cases.",g:["packaging","cook","uat","build failed"]},
+{c:"errors",t:"err",n:"Texture streaming pool over budget",d:"More texture data is visible than the pool allows, so mips stay low. Raise `r.Streaming.PoolSize`, lower texture resolutions or assign LOD Groups, and check `stat streaming` for the worst offenders.",g:["streaming","pool size","blurry","textures"]},
+{c:"errors",t:"err",n:"Low FPS only in the editor",d:"Editor Preferences > General > Performance: turn off Use Less CPU When in Background if you alt-tab while profiling; realtime viewports and open Blueprint editors all cost frame time. The number that matters comes from a Standalone or packaged build.",g:["editor","fps","performance","standalone"]},
+{c:"errors",t:"err",n:"Works in PIE but not in the packaged build",d:"Usually an editor-only dependency: `WITH_EDITOR` code, an Editor Utility asset referenced at runtime, an asset the cook skipped because nothing hard-references it (add its folder to Additional Asset Directories to Cook), or a Blueprint warning that became fatal. Test in Standalone first, then read the cook log.",g:["packaged","cook","editor only","missing asset"]}
+];
+
+</script>
+<script>
+(function(){
+"use strict";
+const CATS=[
+ {id:"all",l:"Everything"},
+ {id:"general",l:"Editor & console"},
+ {id:"profiling",l:"Profiling"},
+ {id:"rendering",l:"Rendering & materials"},
+ {id:"blueprint",l:"Blueprint"},
+ {id:"cpp",l:"C++"},
+ {id:"gameplay",l:"Gameplay & input"},
+ {id:"ui",l:"UI (UMG & Slate)"},
+ {id:"animation",l:"Animation"},
+ {id:"physics",l:"Physics & vehicles"},
+ {id:"networking",l:"Networking"},
+ {id:"ai",l:"AI & navigation"},
+ {id:"audio",l:"Audio"},
+ {id:"errors",l:"Common errors"}
+];
+const TYPES={
+ cmd:{l:"Console command",v:"var(--cmd)"},
+ tip:{l:"Tip",v:"var(--tip)"},
+ howto:{l:"How-to",v:"var(--howto)"},
+ code:{l:"C++ snippet",v:"var(--code)"},
+ key:{l:"Shortcut",v:"var(--key)"},
+ arg:{l:"Launch argument",v:"var(--arg)"},
+ err:{l:"Error",v:"var(--err)"}
+};
+const CAT_LABEL=Object.fromEntries(CATS.map(c=>[c.id,c.l]));
+const PRIMERS={
+ all:'<p>Everything below is one long, filterable list. Search matches titles, commands, descriptions and tags; pick a category on the left or a type below to narrow it. Press <span class="kbd">/</span> from anywhere to jump to the search box.</p>',
+ general:'<p>Open the in-game console with <code>`</code> (the key left of 1; <code>~</code> on many layouts). Press it twice for the full log drawer. Tab autocompletes, and typing a prefix such as <code>stat </code> or <code>r.Lumen.</code> then Tab lists every command under it. Most cheats and stat displays are compiled out of Shipping builds — use the Test configuration when you need them in a packaged game.</p>',
+ profiling:'<p>Start every performance investigation with <code>stat unit</code>. Whichever line is largest is the thread you are waiting on, and everything else on this page branches from that answer.</p><div class="overlay"><span class="m">Frame:</span> <span class="r">16.7 ms</span>   <span class="m">← the whole frame; ≈ the largest of the four below</span>\n<span class="m">Game: </span> <span class="r">14.2 ms</span>   <span class="m">← gameplay CPU: ticks, Blueprint, physics, animation</span>\n<span class="m">Draw: </span> <span class="g"> 6.1 ms</span>   <span class="m">← render thread: culling, draw-call setup</span>\n<span class="m">GPU:  </span> <span class="g"> 9.8 ms</span>   <span class="m">← shaders, resolution, post-process</span>\n<span class="m">RHIT: </span> <span class="g"> 2.3 ms</span>   <span class="m">← RHI thread submitting commands</span></div><p>In this example the game thread is the problem; a GPU trace would be wasted effort. Then measure in a packaged Development or Test build, not the editor.</p>',
+ errors:'<p>Messages as they appear in the Output Log, Message Log or compiler, with the usual cause and the fix. Search for the distinctive part of the message.</p>'
+};
+
+const state={q:"",cat:"all",type:"all"};
+const $=s=>document.querySelector(s);
+const elCats=$("#cats"),elTypes=$("#types"),elList=$("#list"),elMeta=$("#meta"),elHero=$("#hero"),elQ=$("#q"),elBox=$("#searchbox");
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function inlineCode(s){return s.replace(/`([^`]+)`/g,"<code>$1</code>");}
+function tokens(){return state.q.toLowerCase().split(/\s+/).filter(Boolean);}
+function reFor(toks){if(!toks.length)return null;return new RegExp("("+toks.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")","gi");}
+function highlight(html,re){if(!re)return html;return html.replace(/(<[^>]+>)|([^<]+)/g,(m,tag,text)=>tag?tag:text.replace(re,"<mark>$1</mark>"));}
+
+function score(e,toks){
+  if(!toks.length)return 1;
+  const n=e.n.toLowerCase(),k=(e.k||"").toLowerCase(),d=e.d.toLowerCase(),g=(e.g||[]).join(" ").toLowerCase();
+  let s=0;
+  for(const t of toks){
+    let hit=0;
+    if(n.includes(t)){hit+=n.startsWith(t)?14:10;}
+    if(k.includes(t))hit+=7;
+    if(g.includes(t))hit+=5;
+    if(d.includes(t))hit+=1;
+    if(!hit)return 0;
+    s+=hit;
+  }
+  return s;
+}
+
+function matchesBase(e){return (state.cat==="all"||e.c===state.cat)&&(state.type==="all"||e.t===state.type);}
+
+function render(){
+  const toks=tokens(),re=reFor(toks);
+  elBox.classList.toggle("has",state.q.length>0);
+
+  // category counts for current query + type
+  const counts={all:0};
+  for(const c of CATS)counts[c.id]=0;
+  const scored=[];
+  DATA.forEach((e,i)=>{
+    const s=score(e,toks);
+    if(!s)return;
+    if(state.type==="all"||e.t===state.type){counts.all++;counts[e.c]++;}
+    if(matchesBase(e))scored.push({e,s,i});
+  });
+  scored.sort((a,b)=>b.s-a.s||a.i-b.i);
+
+  elCats.innerHTML=CATS.map(c=>`<button class="cat${state.cat===c.id?" on":""}${counts[c.id]===0?" zero":""}" data-cat="${c.id}" aria-pressed="${state.cat===c.id}"><span>${c.l}</span><span class="n">${counts[c.id]}</span></button>`).join("");
+
+  const typeCounts={all:0};
+  for(const t in TYPES)typeCounts[t]=0;
+  DATA.forEach(e=>{if((state.cat==="all"||e.c===state.cat)&&score(e,toks)){typeCounts.all++;typeCounts[e.t]++;}});
+  elTypes.innerHTML=[`<button class="chip${state.type==="all"?" on":""}" data-type="all" aria-pressed="${state.type==="all"}">All types <span class="n">${typeCounts.all}</span></button>`]
+    .concat(Object.entries(TYPES).map(([id,t])=>`<button class="chip${state.type===id?" on":""}" data-type="${id}" aria-pressed="${state.type===id}" style="--c:${t.v}"><span class="dot"></span>${t.l} <span class="n">${typeCounts[id]}</span></button>`)).join("");
+
+  const title=state.cat==="all"?"Unreal Debug Kit":CAT_LABEL[state.cat];
+  const sub=state.cat==="all"?"Console commands, profiling workflows, debugging tools and the fixes for the errors you keep seeing — for Unreal Engine 5, in one searchable place.":"";
+  elHero.innerHTML=`<h1>${title}</h1>${sub?`<p>${sub}</p>`:""}${PRIMERS[state.cat]?`<div class="primer">${PRIMERS[state.cat]}</div>`:""}`;
+
+  const total=DATA.length;
+  const where=[state.cat!=="all"?CAT_LABEL[state.cat]:null,state.type!=="all"?TYPES[state.type].l:null].filter(Boolean).join(" · ");
+  elMeta.innerHTML=`<span>${scored.length} of ${total} entries${where?" — "+esc(where):""}${state.q?` matching “${esc(state.q)}”`:""}</span>${toks.length?"<span>sorted by relevance</span>":""}`;
+
+  if(!scored.length){
+    elList.innerHTML="";
+    const hint=state.q?`Nothing matches <strong>“${esc(state.q)}”</strong>${where?" in "+esc(where):""}. Try a shorter word — <em>stat</em>, <em>trace</em>, <em>replicat</em>, <em>navmesh</em> — or search everything.`:"No entries here with the current filters.";
+    elList.insertAdjacentHTML("afterend",`<div class="empty" id="empty">${hint}<br><button type="button" id="reset">Clear search and filters</button></div>`);
+    return;
+  }
+  const old=$("#empty");if(old)old.remove();
+
+  elList.innerHTML=scored.map(({e,i})=>{
+    const t=TYPES[e.t];
+    const cmd=e.k?`<div class="cmd">${highlight(esc(e.k),re)}<button class="copy" type="button" data-copy="${i}" aria-label="Copy to clipboard">copy</button></div>`:"";
+    const tags=(e.g&&e.g.length)?`<div class="tags">${e.g.map(g=>`<button class="tag" type="button" data-tag="${esc(g)}">${highlight(esc(g),re)}</button>`).join("")}</div>`:"";
+    return `<li class="item" style="--tc:${t.v}">
+      <div class="item-h"><span class="type">${t.l}</span><h3>${highlight(esc(e.n),re)}</h3><button class="catlink" type="button" data-cat="${e.c}">${CAT_LABEL[e.c]}</button></div>
+      ${cmd}<p>${highlight(inlineCode(esc(e.d)),re)}</p>${tags}</li>`;
+  }).join("");
+}
+
+function setHash(){
+  const p=new URLSearchParams();
+  if(state.cat!=="all")p.set("cat",state.cat);
+  if(state.type!=="all")p.set("type",state.type);
+  if(state.q)p.set("q",state.q);
+  const h=p.toString();
+  try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search);}catch(e){}
+}
+function readHash(){
+  try{
+    const p=new URLSearchParams(location.hash.replace(/^#/,""));
+    const c=p.get("cat"),t=p.get("type"),q=p.get("q");
+    if(c&&CAT_LABEL[c])state.cat=c;
+    if(t&&(t==="all"||TYPES[t]))state.type=t;
+    if(q){state.q=q;elQ.value=q;}
+  }catch(e){}
+}
+function update(){render();setHash();}
+
+let timer=null;
+elQ.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(()=>{state.q=elQ.value.trim();update();},70);});
+elQ.addEventListener("keydown",e=>{if(e.key==="Escape"){elQ.value="";state.q="";update();elQ.blur();}});
+$("#clear").addEventListener("click",()=>{elQ.value="";state.q="";update();elQ.focus();});
+$("#home").addEventListener("click",()=>{state.cat="all";state.type="all";state.q="";elQ.value="";update();window.scrollTo({top:0});});
+document.addEventListener("keydown",e=>{
+  if(e.key==="/"&&!/^(input|textarea|select)$/i.test(document.activeElement.tagName)&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();elQ.focus();elQ.select();}
+});
+
+document.addEventListener("click",async e=>{
+  const cat=e.target.closest("[data-cat]");
+  if(cat){state.cat=cat.dataset.cat;update();if(cat.classList.contains("catlink"))window.scrollTo({top:0,behavior:"smooth"});return;}
+  const type=e.target.closest("[data-type]");
+  if(type){state.type=type.dataset.type;update();return;}
+  const tag=e.target.closest("[data-tag]");
+  if(tag){state.q=tag.dataset.tag;elQ.value=state.q;state.cat="all";update();window.scrollTo({top:0,behavior:"smooth"});return;}
+  const reset=e.target.closest("#reset");
+  if(reset){state.cat="all";state.type="all";state.q="";elQ.value="";update();elQ.focus();return;}
+  const copy=e.target.closest("[data-copy]");
+  if(copy){
+    const text=DATA[+copy.dataset.copy].k;
+    const ok=await copyText(text);
+    copy.textContent=ok?"copied":"select it";
+    copy.classList.toggle("ok",ok);
+    setTimeout(()=>{copy.textContent="copy";copy.classList.remove("ok");},1400);
+  }
+});
+
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+  try{const ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");ta.style.cssText="position:fixed;opacity:0;top:0;left:0";document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");ta.remove();return ok;}catch(e){return false;}
+}
+
+// theme: auto → light → dark, remembered per viewer
+const themeBtn=$("#theme");
+const THEMES=["auto","light","dark"];
+function applyTheme(t){
+  if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
+  themeBtn.textContent=t==="auto"?"auto":t;
+  themeBtn.setAttribute("aria-label","Color theme: "+t+". Click to change");
+}
+let theme="auto";
+try{const s=localStorage.getItem("udk-theme");if(THEMES.includes(s))theme=s;}catch(e){}
+applyTheme(theme);
+themeBtn.addEventListener("click",()=>{theme=THEMES[(THEMES.indexOf(theme)+1)%THEMES.length];applyTheme(theme);try{localStorage.setItem("udk-theme",theme);}catch(e){}});
+
+readHash();
+render();
+window.addEventListener("hashchange",()=>{readHash();render();});
+})();
+</script>
+</body>
+</html>
